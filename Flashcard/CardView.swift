@@ -10,16 +10,27 @@ import SwiftUI
 struct CardView: View {
     
     let card: Card
+    private let swipeThreshold: Double = 200
     
     @State private var isShowingQuestion = true
+    @State private var offset: CGSize = .zero // <-- A state property to store the offset
     
     var body: some View {
         ZStack {
-
+            
             // Card background
-            RoundedRectangle(cornerRadius: 25.0)
-                .fill(isShowingQuestion ? .blue : .indigo)
-                .shadow(color: .black, radius: 4, x: -2, y: 2)
+            ZStack {
+                // Back-most card background
+                RoundedRectangle(cornerRadius: 25.0) // <-- Add another card background behind the original
+                    .fill(offset.width < 0 ? .red : .green) // <-- Set fill based on offset (swipe left vs right)
+
+                // Front-most card background (i.e. original background)
+                RoundedRectangle(cornerRadius: 25.0)
+                    .fill(isShowingQuestion ? Color.blue.gradient : Color.indigo.gradient)
+                    .shadow(color: .black, radius: 4, x: -2, y: 2)
+                    .opacity(1 - abs(offset.width) / swipeThreshold) // <-- Fade out front-most background as user swipes
+                
+            }
 
             VStack(spacing: 20) {
 
@@ -41,6 +52,16 @@ struct CardView: View {
         .onTapGesture {
             isShowingQuestion.toggle()
         }
+        .opacity(3 - abs(offset.width) / swipeThreshold * 3)
+        .rotationEffect(.degrees(offset.width / 20.0))
+        .offset(CGSize(width: offset.width, height: 0))
+        .gesture(DragGesture()
+            .onChanged { gesture in
+                let translation = gesture.translation
+                print(translation)
+                offset = translation // <-- update the state offset property as the gesture translation changes
+            }
+        )
     }
 }
 
