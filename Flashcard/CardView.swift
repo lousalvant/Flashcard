@@ -10,6 +10,10 @@ import SwiftUI
 struct CardView: View {
     
     let card: Card
+    
+    var onSwipedLeft: (() -> Void)? // <-- Add closures to be called when user swipes left or right
+    var onSwipedRight: (() -> Void)? // <--
+    
     private let swipeThreshold: Double = 200
     
     @State private var isShowingQuestion = true
@@ -60,13 +64,29 @@ struct CardView: View {
                 let translation = gesture.translation
                 print(translation)
                 offset = translation // <-- update the state offset property as the gesture translation changes
+            }.onEnded { gesture in  // <-- onEnded called when gesture ends
+                
+                if gesture.translation.width > swipeThreshold { // <-- Compare the gesture ended translation value to the swipeThreshold
+                    print("👉 Swiped right")
+                    onSwipedRight?()
+
+                } else if gesture.translation.width < -swipeThreshold {
+                    print("👈 Swiped left")
+                    onSwipedLeft?()
+
+                } else {
+                    print("🚫 Swipe canceled")
+                    withAnimation(.bouncy) { // <-- Make updates to state managed property with animation
+                        offset = .zero
+                    }
+                }
             }
         )
     }
 }
 
 // Card data model
-struct Card {
+struct Card: Equatable {
     let question: String
     let answer: String
     
